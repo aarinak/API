@@ -1,0 +1,47 @@
+import sys
+import requests
+import pygame
+
+
+class MapParams(object):
+    def __init__(self):
+        self.latitude = 40.689273 # широта
+        self.longitude = -74.044592 # долгота
+        self.zoom = 16
+        self.type = "map"
+
+    def ll(self):
+        return str(self.longitude) + "," + str(self.latitude)
+
+
+def load_map(pm):
+    map_request = "http://static-maps.yandex.ru/1.x/?ll={ll}&z={z}&l={type}".format(ll=pm.ll(), z=pm.zoom, type=pm.type)
+    response = requests.get(map_request)
+    if not response:
+        print("Ошибка выполнения запроса:")
+        print(map_request)
+        print("Http статус:", response.status_code, "(", response.reason, ")")
+        sys.exit()
+    map_file = "map.png"
+    try:
+        with open(map_file, "wb") as file:
+            file.write(response.content)
+    except IOError as ex:
+        print("Ошибка записи временного файла:", ex)
+        sys.exit()
+    return map_file
+
+
+if __name__ == "__main__":
+    pygame.init()
+    screen = pygame.display.set_mode((600, 450))
+    pm = MapParams()
+    running = True
+    while running:
+        event = pygame.event.wait()
+        if event.type == pygame.QUIT:
+            running = False
+        map_file = load_map(pm)
+        screen.blit(pygame.image.load(map_file), (0, 0))
+        pygame.display.flip()
+    pygame.quit()
